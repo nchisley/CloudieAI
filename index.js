@@ -3,12 +3,12 @@ const fs = require('fs').promises;
 const path = require('path');
 const { Pool } = require('pg');
 
-// Initialize PostgreSQL connection using the environment variable DATABASE_URL provided by Railway
+// Initialize PostgreSQL connection using the environment variable DATABASE_PUBLIC_URL provided by Railway
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+    connectionString: process.env.DATABASE_PUBLIC_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 pool.connect((err) => {
