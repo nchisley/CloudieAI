@@ -88,7 +88,8 @@ const easterEggs = {
     "to the moon": "🌕🌕🌕 Engage thrusters, ser! Next stop: the CLOUD layer! 🚀☁️",
     "bullish": "🐂 Bullish on Cloudie! Just like the wind carries seeds to grow new trees, we’re here for long-term gains. 🌱",
     "wen airdrop": "🤫 Airdrop? I only whisper such secrets to the birds in the sky. 🕊️☁️",
-    "404": "Error 404: Brain not found. Try again after a cup of ☕️."
+    "404": "Error 404: Brain not found. Try again after a cup of ☕️.",
+    "lore": "I am Cloudie, the Keeper of Guiding Winds!"
 };
 
 client.on('messageCreate', async (message) => {
