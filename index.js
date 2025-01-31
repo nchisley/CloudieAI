@@ -1,6 +1,6 @@
 require('dotenv/config');
 
-// Database 1
+// Database
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('./cloudie-memory.db', (err) => {
     if (err) console.error("⚠️ Database connection error:", err);
