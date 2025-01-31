@@ -25,17 +25,17 @@ Built with a focus on the **Solana ecosystem**, Cloudie uses **nature-based anal
 ---
 
 ## ⚙️ How CloudieAI Works
-Handles Messages: Listens for user messages in specified Discord channels.
-Checks Knowledge Base: Looks for predefined answers in knowledge.json.
-Uses AI for New Questions: If no answer is found, queries GPT-4o via OpenAI API.
-Remembers Conversations: Stores interactions in SQLite for context-aware responses.
+- Handles Messages: Listens for user messages in specified Discord channels.
+- Checks Knowledge Base: Looks for predefined answers in knowledge.json.
+- Uses AI for New Questions: If no answer is found, queries GPT-4o via OpenAI API.
+- Remembers Conversations: Stores interactions in SQLite for context-aware responses.
 
 ---
 
 ## 🎯 Future Development
-🌍 Multi-Platform Expansion – Bring Cloudie to Telegram, Web, and more.
-🤖 Enhanced AI Memory – Improve contextual awareness beyond SQLite.
-📚 Expanded Knowledge Base – Continuously update knowledge.json with more insights.
+- 🌍 Multi-Platform Expansion – Bring Cloudie to Telegram, Web, and more.
+- 🤖 Enhanced AI Memory – Improve contextual awareness beyond SQLite.
+- 📚 Expanded Knowledge Base – Continuously update knowledge.json with more insights.
 
 ---
 
