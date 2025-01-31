@@ -16,11 +16,31 @@ pool.connect((err) => {
   else console.log("✅ Connected to PostgreSQL on Railway.");
 });
 
+// Ensure a user exists in the users table; if not, insert a new record.
+const ensureUserExists = async (userId, username, platform) => {
+  try {
+    const res = await pool.query("SELECT * FROM users WHERE user_id = $1", [userId]);
+    if (res.rows.length === 0) {
+      await pool.query(
+        "INSERT INTO users (user_id, username, platform, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP)",
+        [userId, username, platform]
+      );
+    }
+  } catch (err) {
+    console.error("⚠️ Error ensuring user exists:", err);
+  }
+};
+
 // Promisify database queries for cleaner async/await usage with PostgreSQL
+// Updated to join the users table to access username and platform details.
 const getConversation = async (userId) => {
   try {
     const result = await pool.query(
-      "SELECT role, content FROM conversations WHERE user_id = $1 ORDER BY id DESC LIMIT 10",
+      `SELECT c.role, c.content, u.username, u.platform 
+       FROM conversations c 
+       JOIN users u ON c.user_id = u.user_id 
+       WHERE c.user_id = $1 
+       ORDER BY c.id DESC LIMIT 10`,
       [userId]
     );
     return result.rows;
@@ -148,6 +168,9 @@ client.on('messageCreate', async (message) => {
   // Process only messages from specified channels or if Cloudie is mentioned
   if (!CHANNELS.includes(message.channelId) && !message.mentions.users.has(client.user.id)) return;
 
+  // Ensure the user exists in the users table (using Discord data)
+  await ensureUserExists(message.author.id, message.author.username, "discord");
+
   // Start typing indicator
   await message.channel.sendTyping();
   const sendTypingInterval = setInterval(() => message.channel.sendTyping(), 5000);
@@ -170,7 +193,7 @@ client.on('messageCreate', async (message) => {
     return message.reply(knowledgeBase[foundKey]);
   }
 
-  // Step 3: Retrieve conversation history from the database
+  // Step 3: Retrieve conversation history (joined with users) from the database
   let conversation;
   try {
     const rows = await getConversation(userId);
