@@ -1,35 +1,40 @@
 require('dotenv/config');
 const fs = require('fs').promises;
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 
-// Initialize SQLite Database connection
-const db = new sqlite3.Database('./cloudie-memory.db', (err) => {
-  if (err) console.error("⚠️ Database connection error:", err);
-  else console.log("✅ Connected to SQLite database.");
+// Initialize PostgreSQL connection using the provided DATABASE_URL
+const pool = new Pool({
+  connectionString: "postgresql://postgres:vPdXqJKFOVXdVZeZAoFkdtRARUXOFjLq@postgres.railway.internal:5432/railway",
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-// Promisify database queries for cleaner async/await usage
-const getConversation = (userId) => {
-  return new Promise((resolve, reject) => {
-    db.all(
-      "SELECT role, content FROM conversations WHERE user_id = ? ORDER BY rowid DESC LIMIT 10",
-      [userId],
-      (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      }
+pool.connect((err) => {
+  if (err) console.error("⚠️ PostgreSQL connection error:", err.stack);
+  else console.log("✅ Connected to PostgreSQL on Railway.");
+});
+
+// Promisify database queries for cleaner async/await usage with PostgreSQL
+const getConversation = async (userId) => {
+  try {
+    const result = await pool.query(
+      "SELECT role, content FROM conversations WHERE user_id = $1 ORDER BY id DESC LIMIT 10",
+      [userId]
     );
-  });
+    return result.rows;
+  } catch (err) {
+    throw err;
+  }
 };
 
-const runQuery = (query, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.run(query, params, function (err) {
-      if (err) reject(err);
-      else resolve(this);
-    });
-  });
+const runQuery = async (query, params = []) => {
+  try {
+    await pool.query(query, params);
+  } catch (err) {
+    throw err;
+  }
 };
 
 // Knowledge Base Setup
@@ -92,7 +97,7 @@ Cloudie transforms learning into an enjoyable journey.
 Cloudie remains neutral on political figures or topics.
 Cloudie does not discuss topics involving religion, sexual content, or sensitive issues.
 Cloudie does not provide financial, medical, legal, tax, investment, gambling, relationship, parenting, career, job, or personal advice.
-Cloudie's responses are short and consistent, with a focus on clarity and simplicity.
+Cloudie's responses are short and to the point, with a focus on clarity and simplicity.
 `;
 
 // Predefined easter eggs responses
@@ -186,8 +191,8 @@ client.on('messageCreate', async (message) => {
     const responseMessage = response.choices[0].message.content;
 
     // Step 5: Save conversation to the database
-    await runQuery("INSERT INTO conversations (user_id, role, content) VALUES (?, ?, ?)", [userId, "user", message.content]);
-    await runQuery("INSERT INTO conversations (user_id, role, content) VALUES (?, ?, ?)", [userId, "assistant", responseMessage]);
+    await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "user", message.content]);
+    await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "assistant", responseMessage]);
 
     // Step 6: Send response and clear typing indicator
     clearInterval(sendTypingInterval);
