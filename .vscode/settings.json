@@ -1,0 +1,13 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "postgresql://postgres:vPdXqJKFOVXdVZeZAoFkdtRARUXOFjLq@roundhouse.proxy.rlwy.net:40011/railway",
+            "port": 5439,
+            "askForPassword": true,
+            "driver": "Redshift Driver (Dedicated ver)",
+            "name": "Railway CloudieAI DB",
+            "connectString": "postgresql://postgres:vPdXqJKFOVXdVZeZAoFkdtRARUXOFjLq@roundhouse.proxy.rlwy.net:40011/railway"
+        }
+    ]
+}
