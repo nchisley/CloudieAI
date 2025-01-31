@@ -50,4 +50,4 @@ Want to help make Cloudie even better? Contributions are welcome!
 ---
 
 ## 💙 Support & Contact
-For questions or feedback, reach out via Discord. Let's build something awesome together! 🚀
+For questions or feedback, reach out via TG (n8tr0nc). Let's build something awesome together! 🚀
