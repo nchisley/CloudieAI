@@ -33,7 +33,7 @@ updateKnowledge();
 setInterval(updateKnowledge, 600000);
 
 // Discord
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, PermissionsBitField } = require('discord.js');
 
 // OpenAI
 const { OpenAI } = require('openai');
@@ -92,8 +92,36 @@ const easterEggs = {
     "lore": "I am Cloudie, the Keeper of Guiding Winds!"
 };
 
+// **Command: Train Cloudie**
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
+
+    // **Moderator Command: Train Cloudie**
+    if (message.content.startsWith('!train')) {
+        if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+            return message.reply("❌ You don't have permission to train me.");
+        }
+
+        // Extract keyword & response from message
+        const args = message.content.slice(6).split('|').map(a => a.trim());
+        if (args.length < 2) {
+            return message.reply("⚠️ Invalid format! Use `!train keyword | response`");
+        }
+
+        const [keyword, response] = args;
+
+        // Update knowledge.json
+        knowledgeBase[keyword] = response;
+        try {
+            fs.writeFileSync(KNOWLEDGE_PATH, JSON.stringify(knowledgeBase, null, 2));
+            console.log(`✅ Cloudie trained: ${keyword} → ${response}`);
+            return message.reply(`✅ Cloudie has learned: **${keyword}**`);
+        } catch (error) {
+            console.error("⚠️ Error saving knowledge:", error);
+            return message.reply("❌ Failed to save knowledge.");
+        }
+    }
+
     if (message.content.startsWith(IGNORE_PREFIX)) return;
     if (!CHANNELS.includes(message.channelId) && !message.mentions.users.has(client.user.id)) return;
 
@@ -145,15 +173,10 @@ client.on('messageCreate', async (message) => {
             const responseMessage = response.choices[0].message.content;
 
             // 📌 Step 5: Store conversation history in the database
-            db.run("INSERT INTO conversations (user_id, role, content) VALUES (?, ?, ?)", [userId, "user", message.content], (err) => {
-                if (err) console.error("⚠️ Database insert error (User message):", err);
-            });
+            db.run("INSERT INTO conversations (user_id, role, content) VALUES (?, ?, ?)", [userId, "user", message.content]);
+            db.run("INSERT INTO conversations (user_id, role, content) VALUES (?, ?, ?)", [userId, "assistant", responseMessage]);
 
-            db.run("INSERT INTO conversations (user_id, role, content) VALUES (?, ?, ?)", [userId, "assistant", responseMessage], (err) => {
-                if (err) console.error("⚠️ Database insert error (AI response):", err);
-            });
-
-            // 📌 Step 6: Format and send response
+            // 📌 Step 6: Send response
             clearInterval(sendTypingInterval);
             await message.reply(responseMessage);
         } catch (error) {
