@@ -1,4 +1,6 @@
 require('dotenv/config');
+const fs = require('fs');
+const path = require('path');
 
 // Database
 const sqlite3 = require('sqlite3').verbose();
@@ -7,34 +9,34 @@ const db = new sqlite3.Database('./cloudie-memory.db', (err) => {
     else console.log("✅ Connected to SQLite database.");
 });
 
-// GitHub raw URL for knowledge.json
-const GITHUB_KNOWLEDGE_URL = "/knowledge.json";
-
-// Discord
-const { Client, GatewayIntentBits } = require('discord.js');
-
-// OpenAI
-const { OpenAI } = require('openai');
-
-// Knowledgebase Fetcher
-const axios = require('axios');
-
+// Load Knowledge Base from Local File
+const KNOWLEDGE_PATH = path.join(__dirname, 'knowledge.json');
 let knowledgeBase = {};
 
-// Function to fetch knowledge from GitHub
+// Function to load knowledge from local JSON file
 async function updateKnowledge() {
     try {
-        const response = await axios.get(GITHUB_KNOWLEDGE_URL);
-        knowledgeBase = response.data;
-        console.log("✅ Knowledge base updated from GitHub.");
+        if (fs.existsSync(KNOWLEDGE_PATH)) {
+            const data = fs.readFileSync(KNOWLEDGE_PATH, 'utf8');
+            knowledgeBase = JSON.parse(data);
+            console.log("✅ Knowledge base updated from local file.");
+        } else {
+            console.error("⚠️ Knowledge file not found.");
+        }
     } catch (error) {
-        console.error("⚠️ Error updating knowledge base:", error);
+        console.error("⚠️ Error updating knowledge base:", error.message);
     }
 }
 
 // Fetch knowledge immediately, then update every 10 minutes
 updateKnowledge();
 setInterval(updateKnowledge, 600000);
+
+// Discord
+const { Client, GatewayIntentBits } = require('discord.js');
+
+// OpenAI
+const { OpenAI } = require('openai');
 
 // Discord Bot Setup
 const client = new Client({
