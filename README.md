@@ -21,7 +21,8 @@ Built with a focus on the **Solana ecosystem**, Cloudie uses **nature-based anal
 - **OpenAI API** – For generating AI-powered responses.  
 - ~~**SQLite** – To store user interactions and improve contextual awareness.~~
 - **dotenv** – For managing environment variables securely.
-- **PostgreSQL** – To store conversation data and manage user information, replacing SQLite and enhancing scalability.  
+- **PostgreSQL** – To store conversation data and manage user information, replacing SQLite and enhancing scalability.
+- **Railway** – For hosting and deploying Cloudie efficiently. [Start using Raillway here >](https://railway.com?referralCode=3G_cuV) 
 
 ---
 
