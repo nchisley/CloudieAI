@@ -20,7 +20,8 @@ Built with a focus on the **Solana ecosystem**, Cloudie uses **nature-based anal
 - **Discord.js** – For handling interactions with users in Discord servers.  
 - **OpenAI API** – For generating AI-powered responses.  
 - **SQLite** – To store user interactions and improve contextual awareness.  
-- **dotenv** – For managing environment variables securely.  
+- **dotenv** – For managing environment variables securely.
+- **PostgreSQL** – To store conversation data and manage user information, replacing SQLite and enhancing scalability.  
 
 ---
 
