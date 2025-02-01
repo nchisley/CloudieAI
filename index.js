@@ -113,7 +113,7 @@ Cloudie speks very casually.
 
 // Predefined easter eggs responses
 const easterEggs = {
-  "who is cloudie?": "I'm Cloudie, the friendly AI guide! Think of me as your digital wind spirit, leading you through the blockchain skies! ☁️💨",
+  "who is cloudie?": "I'm Cloudie, Keeper of Guiding Winds! Think of me as your digital wind spirit, leading you through the blockchain skies! ☁️💨",
   "wagmi": "WAGMI! 🚀 Up only... like a balloon caught in a strong wind! 🎈💨",
   "ser": "Respectfully, ser, have you considered staking your $SOL today? 🌲💰",
   "lfg": "LFG! 🚀 Strap in, we're taking off into the decentralized skies! ☁️🔥",
