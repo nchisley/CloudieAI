@@ -11,7 +11,7 @@ Built with a focus on the **Solana ecosystem**, Cloudie uses **nature-based anal
 ✅ **Nature-Based Analogies** – Explains blockchain concepts using comparisons to trees, rivers, and ecosystems.  
 ✅ **Memory & Context Awareness** – Remembers past conversations to provide relevant responses.  
 ✅ **Easter Eggs** – Fun, hidden messages and responses for community engagement.  
-✅ **Database Storage** – Uses SQLite to store past interactions and enhance conversation flow.  
+✅ **Database Storage** – Uses PostgreSQL to store past interactions and user metadata, improving context and scalability.  
 
 ---
 
@@ -19,8 +19,9 @@ Built with a focus on the **Solana ecosystem**, Cloudie uses **nature-based anal
 - **Node.js** – The backbone of CloudieAI.  
 - **Discord.js** – For handling interactions with users in Discord servers.  
 - **OpenAI API** – For generating AI-powered responses.  
-- **SQLite** – To store user interactions and improve contextual awareness.  
-- **dotenv** – For managing environment variables securely.  
+- ~~**SQLite** – To store user interactions and improve contextual awareness.~~
+- **dotenv** – For managing environment variables securely.
+- **PostgreSQL** – To store conversation data and manage user information, replacing SQLite and enhancing scalability.  
 
 ---
 
@@ -28,13 +29,13 @@ Built with a focus on the **Solana ecosystem**, Cloudie uses **nature-based anal
 - Handles Messages: Listens for user messages in specified Discord channels.
 - Checks Knowledge Base: Looks for predefined answers in knowledge.json.
 - Uses AI for New Questions: If no answer is found, queries GPT-4o via OpenAI API.
-- Remembers Conversations: Stores interactions in SQLite for context-aware responses.
+- Remembers Conversations: Stores interactions in PostgreSQL for context-aware responses and leverages a users table for enriched metadata.
 
 ---
 
 ## 🎯 Future Development
 - 🌍 Multi-Platform Expansion – Bring Cloudie to Telegram, Web, and more.
-- 🤖 Enhanced AI Memory – Improve contextual awareness beyond SQLite.
+- ~~🤖 Enhanced AI Memory – Improve contextual awareness beyond SQLite.~~
 - 📚 Expanded Knowledge Base – Continuously update knowledge.json with more insights.
 
 ---
