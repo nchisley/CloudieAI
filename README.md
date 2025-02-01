@@ -34,9 +34,10 @@ Built with a focus on the **Solana ecosystem**, Cloudie uses **nature-based anal
 ---
 
 ## 🎯 Future Development
-- 🌍 Multi-Platform Expansion – Bring Cloudie to Telegram, Web, and more.
-- ~~🤖 Enhanced AI Memory – Improve contextual awareness beyond SQLite.~~
-- 📚 Expanded Knowledge Base – Continuously update knowledge.json with more insights.
+- Multi-Platform Expansion – Bring Cloudie to Telegram, Web, and more.
+- ~~Enhanced AI Memory – Improve contextual awareness beyond SQLite.~~
+- Expanded Knowledge Base – Continuously update knowledge.json with more insights.
+- Add USer Specific Responses – Update database and command to include option for user specific responses.
 
 ---
 

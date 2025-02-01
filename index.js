@@ -176,18 +176,30 @@ client.on('messageCreate', async (message) => {
   }
 
   // Step 2: Check Knowledge Base for matching keywords from the database
-  let knowledgeItems;
-  try {
+    let knowledgeItems;
+    try {
     knowledgeItems = await getKnowledge();
-  } catch (err) {
+    } catch (err) {
     console.error("Error fetching knowledge:", err);
     knowledgeItems = [];
-  }
-  const foundItem = knowledgeItems.find(item => userQuery.includes(item.keyword.toLowerCase()));
-  if (foundItem) {
+    }
+
+    // Helper function to escape regex special characters
+    function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Check for a matching keyword using a regular expression with word boundaries.
+    const foundItem = knowledgeItems.find(item => {
+    const escapedKeyword = escapeRegex(item.keyword);
+    const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
+    return regex.test(message.content);
+    });
+
+    if (foundItem) {
     clearInterval(sendTypingInterval);
     return message.reply(foundItem.response);
-  }
+    }
 
   // Step 3: Retrieve conversation history (joined with users) from the database
   let conversation;
