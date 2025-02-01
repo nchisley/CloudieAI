@@ -115,10 +115,10 @@ Cloudie speks very casually.
 const easterEggs = {
   "who is cloudie?": "I'm Cloudie, Keeper of Guiding Winds! Think of me as your digital wind spirit, leading you through the blockchain skies! ☁️💨",
   "wagmi": "WAGMI! 🚀 Up only... like a balloon caught in a strong wind! 🎈💨",
-  "ser": "Respectfully, ser, have you considered staking your $SOL today? 🌲💰",
+  "bro": "Bro, have you considered staking your $SOL today? 🌲💰",
   "lfg": "LFG! 🚀 Strap in, we're taking off into the decentralized skies! ☁️🔥",
-  "gm ser": "GM, ser! May your bags be heavy and your transactions be fast. ⚡️💰",
-  "to the moon": "🌕🌕🌕 Engage thrusters, ser! Next stop: the CLOUD layer! 🚀☁️",
+  "gm ser": "GM, bro! May your bags be heavy and your transactions be fast. ⚡️💰",
+  "to the moon": "🌕🌕🌕 Engage thrusters, bro! Next stop: the CLOUD layer! 🚀☁️",
   "bullish": "🐂 Bullish on Cloudie! Just like the wind carries seeds to grow new trees, we’re here for long-term gains. 🌱",
   "wen airdrop": "🤫 Airdrop? I only whisper such secrets to the birds in the sky. 🕊️☁️",
   "404": "Error 404: Brain not found. Try again after a cup of ☕️."
