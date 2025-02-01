@@ -1,14 +1,13 @@
 require('dotenv/config');
-const fs = require('fs').promises;
 const path = require('path');
 const { Pool } = require('pg');
 
-// Initialize PostgreSQL connection using the environment variable DATABASE_PUBLIC_URL provided by Railway
+// Initialize PostgreSQL connection using the provided DATABASE_URL
 const pool = new Pool({
-    connectionString: process.env.DATABASE_PUBLIC_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+  connectionString: "postgresql://postgres:vPdXqJKFOVXdVZeZAoFkdtRARUXOFjLq@postgres.railway.internal:5432/railway",
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 pool.connect((err) => {
@@ -31,8 +30,7 @@ const ensureUserExists = async (userId, username, platform) => {
   }
 };
 
-// Promisify database queries for cleaner async/await usage with PostgreSQL
-// Updated to join the users table to access username and platform details.
+// Retrieve conversation history by joining conversations with users to include additional user details.
 const getConversation = async (userId) => {
   try {
     const result = await pool.query(
@@ -57,25 +55,16 @@ const runQuery = async (query, params = []) => {
   }
 };
 
-// Knowledge Base Setup
-const KNOWLEDGE_PATH = path.join(__dirname, 'knowledge.json');
-let knowledgeBase = {};
-
-// Asynchronous function to update knowledge from local file
-async function updateKnowledge() {
+// Retrieve all knowledge base entries from the database.
+const getKnowledge = async () => {
   try {
-    await fs.access(KNOWLEDGE_PATH);
-    const data = await fs.readFile(KNOWLEDGE_PATH, 'utf8');
-    knowledgeBase = JSON.parse(data);
-    console.log("✅ Knowledge base updated from local file.");
-  } catch (error) {
-    console.error("⚠️ Error updating knowledge base:", error.message);
+    const result = await pool.query("SELECT keyword, response FROM knowledge");
+    return result.rows;
+  } catch (err) {
+    console.error("⚠️ Error fetching knowledge:", err);
+    return [];
   }
-}
-
-// Fetch knowledge immediately, then update every 10 minutes
-updateKnowledge();
-setInterval(updateKnowledge, 600000);
+};
 
 // Discord and OpenAI setup
 const { Client, GatewayIntentBits, PermissionsBitField } = require('discord.js');
@@ -140,21 +129,22 @@ const easterEggs = {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  // Moderator command: !train
+  // Moderator command: !train – saves new knowledge to the database.
   if (message.content.startsWith('!train')) {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return message.reply("❌ You don't have permission to train me.");
     }
-
     // Extract keyword & response from message using '|' as separator
     const args = message.content.slice(6).split('|').map(arg => arg.trim());
     if (args.length < 2) {
       return message.reply("⚠️ Invalid format! Use `!train keyword | response`");
     }
     const [keyword, response] = args;
-    knowledgeBase[keyword] = response;
     try {
-      await fs.writeFile(KNOWLEDGE_PATH, JSON.stringify(knowledgeBase, null, 2));
+      await pool.query(
+        "INSERT INTO knowledge (keyword, response) VALUES ($1, $2) ON CONFLICT (keyword) DO UPDATE SET response = EXCLUDED.response",
+        [keyword, response]
+      );
       console.log(`✅ Cloudie trained: ${keyword} → ${response}`);
       return message.reply(`✅ Cloudie has learned: **${keyword}**`);
     } catch (error) {
@@ -184,13 +174,18 @@ client.on('messageCreate', async (message) => {
     return message.reply(easterEggs[userQuery]);
   }
 
-  // Step 2: Check Knowledge Base for matching keywords
-  const foundKey = Object.keys(knowledgeBase).find(key =>
-    userQuery.includes(key.toLowerCase())
-  );
-  if (foundKey) {
+  // Step 2: Check Knowledge Base for matching keywords from the database
+  let knowledgeItems;
+  try {
+    knowledgeItems = await getKnowledge();
+  } catch (err) {
+    console.error("Error fetching knowledge:", err);
+    knowledgeItems = [];
+  }
+  const foundItem = knowledgeItems.find(item => userQuery.includes(item.keyword.toLowerCase()));
+  if (foundItem) {
     clearInterval(sendTypingInterval);
-    return message.reply(knowledgeBase[foundKey]);
+    return message.reply(foundItem.response);
   }
 
   // Step 3: Retrieve conversation history (joined with users) from the database
