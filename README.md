@@ -40,6 +40,8 @@ Built with a focus on the **Solana ecosystem**, Cloudie uses **nature-based anal
 - ~~Enhanced AI Memory – Improve contextual awareness beyond SQLite.~~  
 - Expanded Knowledge Base – Continuously update the training data with more insights and dynamic explanation prompts.  
 - Add User-Specific Responses – Update database and commands to support responses tailored to specific users.
+- Integrate Google API – Enhance Cloudie's capabilities by incorporating the Google API for advanced web search and data retrieval.
+
 
 ---
 
