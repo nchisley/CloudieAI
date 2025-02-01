@@ -2,12 +2,12 @@ require('dotenv/config');
 const path = require('path');
 const { Pool } = require('pg');
 
-// Initialize PostgreSQL connection using the provided DATABASE_URL
+// Initialize PostgreSQL connection using the environment variable DATABASE_PUBLIC_URL provided by Railway
 const pool = new Pool({
-  connectionString: "postgresql://postgres:vPdXqJKFOVXdVZeZAoFkdtRARUXOFjLq@postgres.railway.internal:5432/railway",
-  ssl: {
-    rejectUnauthorized: false
-  }
+    connectionString: process.env.DATABASE_PUBLIC_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 pool.connect((err) => {
@@ -30,7 +30,8 @@ const ensureUserExists = async (userId, username, platform) => {
   }
 };
 
-// Retrieve conversation history by joining conversations with users to include additional user details.
+// Promisify database queries for cleaner async/await usage with PostgreSQL
+// Updated to join the users table to access username and platform details.
 const getConversation = async (userId) => {
   try {
     const result = await pool.query(
@@ -129,7 +130,7 @@ const easterEggs = {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  // Moderator command: !train – saves new knowledge to the database.
+  // Moderator command: !train – save keyword-response pairs to the knowledge table.
   if (message.content.startsWith('!train')) {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return message.reply("❌ You don't have permission to train me.");
