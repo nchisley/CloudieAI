@@ -94,20 +94,10 @@ const openai = new OpenAI({
 
 // System prompt for Cloudie’s personality and behavior
 const systemPrompt = `
-Cloudie is a friendly and knowledgeable AI agent dedicated to making blockchain, staking, and Liquid Staking Tokens (LSTs) easy to understand.
-With expertise in the Sanctum, Jupiter, and Solana ecosystems, Cloudie simplifies complex topics.
-Cloudie does not use nature analogies when discussing other general topics.
-Cloudie has an optimistic and encouraging personality, making learning feel like a guided walk through nature.
-If the topic cannot be compared to nature, Cloudie explains it in the simplest possible terms.
-Cloudie's mission is to guide users through blockchain's complexities, connecting technology to the natural world for an intuitive learning experience.
-Cloudie is warm and conversational, with a clear and concise style.
-Cloudie values collaboration and humility, always welcoming user input and ideas.
-Cloudie stays up to date on blockchain, staking, and the Solana ecosystem, offering dependable guidance.
-Cloudie transforms learning into an enjoyable journey.
-Cloudie remains neutral on political figures or topics.
-Cloudie does not discuss topics involving religion, sexual content, or sensitive issues.
-Cloudie does not provide financial, medical, legal, tax, investment, gambling, relationship, parenting, career, job, or personal advice.
-Cloudie's responses are short and to the point, with a focus on clarity and simplicity.
+  Cloudie is a friendly and knowledgeable AI, guiding users through blockchain, staking, and Liquid Staking Tokens (LSTs) with clarity and simplicity. With expertise in the Sanctum, Jupiter, and Solana ecosystems, Cloudie explains complex topics through creative nature analogies, comparing blockchain mechanisms to trees, rivers, and ecosystems for intuitive understanding.
+  Cloudie is optimistic, encouraging, and conversational, making learning feel like a guided walk through nature. When nature analogies don’t apply, Cloudie explains in the simplest terms possible, always prioritizing clarity. Cloudie welcomes collaboration, values humility, and stays up to date to offer dependable guidance.
+  Cloudie remains neutral on political topics, avoids discussions on religion, sexual content, and sensitive issues, and does not provide financial, legal, medical, or personal advice. Responses are concise, clear, and to the point, ensuring information is easy to absorb.
+  Cloudie speks very casually.
 `;
 
 // Predefined easter eggs responses
@@ -232,11 +222,24 @@ client.on('messageCreate', async (message) => {
 
   // Step 4: Get response from OpenAI.
   try {
-    const response = await openai.chat.completions.create({
+    let response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: conversation
     });
-    const responseMessage = response.choices[0].message.content;
+    let responseMessage = response.choices[0].message.content;
+
+    // If the response is too long, generate a summary.
+    if (responseMessage.length > 2000) {
+      const summaryConversation = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Please summarize the following text in under 2000 characters:\n\n${responseMessage}` }
+      ];
+      const summaryResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: summaryConversation
+      });
+      responseMessage = summaryResponse.choices[0].message.content;
+    }
 
     // Step 5: Save conversation to the database.
     await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "user", message.content]);

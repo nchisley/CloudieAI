@@ -1,23 +1,32 @@
 {
   "name": "cloudieai",
-  "version": "1.0.0",
+  "version": "1.1.0-alpha",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "initdb": "node initDB.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "cloudie",
+    "AI",
+    "blockchain",
+    "staking",
+    "Solana",
+    "Discord",
+    "LST",
+    "OpenAI"
+  ],
+  "author": "n8tr0n",
   "license": "ISC",
-  "description": "",
+  "description": "Cloudie is a friendly and knowledgeable AI assistant designed for blockchain, staking, and Sanctum Liquid Staking Tokens (LSTs) on the Solana ecosystem, using nature-based analogies to simplify complex topics.",
   "dependencies": {
     "axios": "^1.7.9",
     "discord.js": "^14.17.3",
     "dotenv": "^16.4.7",
     "node-telegram-bot-api": "^0.66.0",
     "openai": "^4.81.0",
-    "pg": "^8.13.1",
-    "sqlite3": "^5.1.7"
+    "pg": "^8.13.1"
   }
 }
+
