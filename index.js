@@ -317,7 +317,7 @@ app.post('/api/chat', async (req, res) => {
     return res.json({ response: responseMessage });
   } catch (error) {
     console.error("API Error:", error);
-    return res.status(500).json({ error: "Failed to get response from OpenAI" });
+    return res.status(500).json({ error: "Failed to get response from OpenAI." });
   }
 });
 
