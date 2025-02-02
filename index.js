@@ -100,7 +100,9 @@ const systemPrompt = `
   Cloudie remains neutral on political topics, avoids discussions on religion, sexual content, and sensitive issues, and does not provide financial, legal, medical, or personal advice. Responses are concise, clear, and to the point, ensuring information is easy to absorb.
 `;
 
-// Main message handling for Discord
+// -------------------
+// Discord Bot Message Handling
+// -------------------
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
@@ -172,52 +174,7 @@ client.on('messageCreate', async (message) => {
   // Lowercase the incoming message content for matching.
   const userQuery = message.content.toLowerCase().trim();
 
-  // Step 1: Check Knowledge Base for matching keywords.
-  let knowledgeItems;
-  try {
-    knowledgeItems = await getKnowledge();
-  } catch (err) {
-    console.error("Error fetching knowledge:", err);
-    knowledgeItems = [];
-  }
-
-  // Helper function to escape regex special characters.
-  function escapeRegex(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  // Find a matching knowledge entry using case-insensitive regex.
-  const foundItem = knowledgeItems.find(item => {
-    const storedKeyword = item.keyword.toLowerCase();
-    const escapedKeyword = escapeRegex(storedKeyword);
-    const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
-    return regex.test(userQuery);
-  });
-
-  if (foundItem) {
-    clearInterval(sendTypingInterval);
-    // If "details" exists, generate a dynamic explanation; otherwise, return stored response.
-    if (foundItem.details) {
-      const dynamicConversation = [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: foundItem.details }
-      ];
-      try {
-        const dynamicResponse = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: dynamicConversation
-        });
-        return message.reply(dynamicResponse.choices[0].message.content);
-      } catch (error) {
-        console.error("⚠️ OpenAI dynamic explanation error:", error);
-        return message.reply(foundItem.response);
-      }
-    } else {
-      return message.reply(foundItem.response);
-    }
-  }
-
-  // Step 2: Retrieve conversation history (joined with users) from the database.
+  // Step 1: Retrieve conversation history (joined with users) from the database.
   let conversation;
   try {
     const rows = await getConversation(userId);
@@ -229,7 +186,7 @@ client.on('messageCreate', async (message) => {
     return message.reply("Sorry, I encountered a database error.");
   }
 
-  // Step 3: Get response from OpenAI.
+  // Step 2: Get response from OpenAI.
   try {
     let response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -250,11 +207,11 @@ client.on('messageCreate', async (message) => {
       responseMessage = summaryResponse.choices[0].message.content;
     }
 
-    // Step 4: Save conversation to the database.
+    // Step 3: Save conversation to the database.
     await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "user", message.content]);
     await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "assistant", responseMessage]);
 
-    // Step 5: Send response and clear typing indicator.
+    // Step 4: Send response and clear typing indicator.
     clearInterval(sendTypingInterval);
     return message.reply(responseMessage);
   } catch (error) {
@@ -277,12 +234,59 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors()); // Enable CORS for all routes
 
-// API endpoint for chat interface
+// API endpoint for chat interface with knowledge retrieval
 app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: "No message provided" });
 
-  // Build a conversation with the system prompt and the user's message.
+  // Normalize the incoming message.
+  const userQuery = message.toLowerCase().trim();
+
+  // Retrieve knowledge base entries.
+  let knowledgeItems;
+  try {
+    knowledgeItems = await getKnowledge();
+  } catch (err) {
+    console.error("Error fetching knowledge:", err);
+    knowledgeItems = [];
+  }
+
+  // Helper function to escape regex special characters.
+  function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // Check for a matching keyword using case-insensitive regex.
+  const foundItem = knowledgeItems.find(item => {
+    const storedKeyword = item.keyword.toLowerCase();
+    const escapedKeyword = escapeRegex(storedKeyword);
+    const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
+    return regex.test(userQuery);
+  });
+
+  if (foundItem) {
+    // If "details" exists, generate a dynamic explanation.
+    if (foundItem.details) {
+      const dynamicConversation = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: foundItem.details }
+      ];
+      try {
+        const dynamicResponse = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: dynamicConversation
+        });
+        return res.json({ response: dynamicResponse.choices[0].message.content });
+      } catch (error) {
+        console.error("⚠️ OpenAI dynamic explanation error:", error);
+        return res.json({ response: foundItem.response });
+      }
+    } else {
+      return res.json({ response: foundItem.response });
+    }
+  }
+
+  // If no knowledge match is found, build a conversation with the system prompt and user's message.
   const conversation = [
     { role: "system", content: systemPrompt },
     { role: "user", content: message }
