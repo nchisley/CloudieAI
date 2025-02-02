@@ -99,7 +99,19 @@ const systemPrompt = `
   Cloudie remains neutral on political topics, avoids discussions on religion, sexual content, and sensitive issues, and does not provide financial, legal, medical, or personal advice. Responses are concise, clear, and to the point, ensuring information is easy to absorb.
 `;
 
-// Main message handling
+// Predefined easter eggs responses
+const easterEggs = {
+  "wagmi": "WAGMI! 🚀 Up only... like a balloon caught in a strong wind! 🎈💨",
+  "bro": "Bro, have you considered staking your $SOL today? 🌲💰",
+  "lfg": "LFG! 🚀 Strap in, we're taking off into the decentralized skies! ☁️🔥",
+  "gm ser": "GM, bro! May your bags be heavy and your transactions be fast. ⚡️💰",
+  "to the moon": "🌕🌕🌕 Engage thrusters, bro! Next stop: the CLOUD layer! 🚀☁️",
+  "bullish": "🐂 Bullish on Cloudie! Just like the wind carries seeds to grow new trees, we’re here for long-term gains. 🌱",
+  "wen airdrop": "🤫 Airdrop? I only whisper such secrets to the birds in the sky. 🕊️☁️",
+  "404": "Error 404: Brain not found. Try again after a cup of ☕️."
+};
+
+// Main message handling for Discord
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
@@ -109,7 +121,6 @@ client.on('messageCreate', async (message) => {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return message.reply("❌ You don't have permission to train me.");
     }
-
     // Extract keyword, response, and optionally details from message using '|' as separator.
     const args = message.content.slice(6).split('|').map(arg => arg.trim());
     if (args.length < 2) {
@@ -260,3 +271,57 @@ client.on('messageCreate', async (message) => {
 });
 
 client.login(process.env.TOKEN);
+
+// -------------------
+// Express API Endpoint
+// -------------------
+
+const express = require('express');
+const bodyParser = require('body-parser');
+
+const app = express();
+app.use(bodyParser.json());
+
+// API endpoint for chat interface
+app.post('/api/chat', async (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ error: "No message provided" });
+
+  // Build a conversation with the system prompt and the user's message.
+  const conversation = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: message }
+  ];
+
+  try {
+    let response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: conversation
+    });
+    let responseMessage = response.choices[0].message.content;
+
+    // If the response is too long, generate a summary.
+    if (responseMessage.length > 2000) {
+      const summaryConversation = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Please summarize the following text in under 2000 characters:\n\n${responseMessage}` }
+      ];
+      const summaryResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: summaryConversation
+      });
+      responseMessage = summaryResponse.choices[0].message.content;
+    }
+
+    // Optionally, you can save the conversation to the database here.
+    return res.json({ response: responseMessage });
+  } catch (error) {
+    console.error("API Error:", error);
+    return res.status(500).json({ error: "Failed to get response from OpenAI" });
+  }
+});
+
+const API_PORT = process.env.API_PORT || 3000;
+app.listen(API_PORT, () => {
+  console.log(`API server is running on port ${API_PORT}`);
+});
