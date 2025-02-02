@@ -174,6 +174,49 @@ client.on('messageCreate', async (message) => {
   // Lowercase the incoming message content for matching.
   const userQuery = message.content.toLowerCase().trim();
 
+  // ---- Knowledge Retrieval Block for Discord ----
+  let knowledgeItems;
+  try {
+    knowledgeItems = await getKnowledge();
+  } catch (err) {
+    console.error("Error fetching knowledge:", err);
+    knowledgeItems = [];
+  }
+  // Helper function to escape regex special characters.
+  function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  // Find a matching knowledge entry using case-insensitive regex.
+  const foundItem = knowledgeItems.find(item => {
+    const storedKeyword = item.keyword.toLowerCase();
+    const escapedKeyword = escapeRegex(storedKeyword);
+    const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
+    return regex.test(userQuery);
+  });
+  if (foundItem) {
+    clearInterval(sendTypingInterval);
+    // If "details" exists, generate a dynamic explanation; otherwise, return stored response.
+    if (foundItem.details) {
+      const dynamicConversation = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: foundItem.details }
+      ];
+      try {
+        const dynamicResponse = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: dynamicConversation
+        });
+        return message.reply(dynamicResponse.choices[0].message.content);
+      } catch (error) {
+        console.error("⚠️ OpenAI dynamic explanation error:", error);
+        return message.reply(foundItem.response);
+      }
+    } else {
+      return message.reply(foundItem.response);
+    }
+  }
+  // ---- End Knowledge Retrieval Block for Discord ----
+
   // Step 1: Retrieve conversation history (joined with users) from the database.
   let conversation;
   try {
@@ -226,7 +269,6 @@ client.login(process.env.TOKEN);
 // -------------------
 // Express API Endpoint
 // -------------------
-
 const express = require('express');
 const bodyParser = require('body-parser');
 
