@@ -110,12 +110,15 @@ client.on('messageCreate', async (message) => {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return message.reply("❌ You don't have permission to train me.");
     }
-    // Extract keyword, response, and optionally details from message using '|' as separator.
-    const args = message.content.slice(6).split('|').map(arg => arg.trim());
-    if (args.length < 2) {
+    // Extract parts using '|' as separator.
+    const rawArgs = message.content.slice(6).split('|');
+    if (rawArgs.length < 2) {
       return message.reply("⚠️ Invalid format! Use `!train keyword | response` or `!train keyword | response | details`");
     }
-    const [keyword, response, details] = args;
+    // Only normalize the keyword to lowercase.
+    const keyword = rawArgs[0].trim().toLowerCase();
+    const response = rawArgs[1].trim();
+    const details = rawArgs[2] ? rawArgs[2].trim() : null;
     try {
       await pool.query(
         "INSERT INTO knowledge (keyword, response, details) VALUES ($1, $2, $3) ON CONFLICT (keyword) DO UPDATE SET response = EXCLUDED.response, details = EXCLUDED.details",
@@ -134,7 +137,8 @@ client.on('messageCreate', async (message) => {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return message.reply("❌ You don't have permission to untrain me.");
     }
-    const keywordToUntrain = message.content.slice(9).trim();
+    // Convert the provided keyword to lowercase.
+    const keywordToUntrain = message.content.slice(9).trim().toLowerCase();
     if (!keywordToUntrain) {
       return message.reply("⚠️ Please provide the keyword to untrain. Usage: `!untrain <keyword>`");
     }
@@ -165,6 +169,7 @@ client.on('messageCreate', async (message) => {
   const sendTypingInterval = setInterval(() => message.channel.sendTyping(), 5000);
 
   const userId = message.author.id;
+  // Lowercase the incoming message content for matching.
   const userQuery = message.content.toLowerCase().trim();
 
   // Step 1: Retrieve conversation history (joined with users) from the database.
