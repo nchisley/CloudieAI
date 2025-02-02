@@ -100,18 +100,6 @@ const systemPrompt = `
   Cloudie speks very casually.
 `;
 
-// Predefined easter eggs responses
-const easterEggs = {
-  "wagmi": "WAGMI! 🚀 Up only... like a balloon caught in a strong wind! 🎈💨",
-  "bro": "Bro, have you considered staking your $SOL today? 🌲💰",
-  "lfg": "LFG! 🚀 Strap in, we're taking off into the decentralized skies! ☁️🔥",
-  "gm ser": "GM, bro! May your bags be heavy and your transactions be fast. ⚡️💰",
-  "to the moon": "🌕🌕🌕 Engage thrusters, bro! Next stop: the CLOUD layer! 🚀☁️",
-  "bullish": "🐂 Bullish on Cloudie! Just like the wind carries seeds to grow new trees, we’re here for long-term gains. 🌱",
-  "wen airdrop": "🤫 Airdrop? I only whisper such secrets to the birds in the sky. 🕊️☁️",
-  "404": "Error 404: Brain not found. Try again after a cup of ☕️."
-};
-
 // Main message handling
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
