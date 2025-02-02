@@ -1,13 +1,14 @@
 require('dotenv/config');
 const path = require('path');
 const { Pool } = require('pg');
+const cors = require('cors'); // Import CORS middleware
 
 // Initialize PostgreSQL connection using the environment variable DATABASE_PUBLIC_URL provided by Railway
 const pool = new Pool({
-    connectionString: process.env.DATABASE_PUBLIC_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+  connectionString: process.env.DATABASE_PUBLIC_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 pool.connect((err) => {
@@ -99,18 +100,6 @@ const systemPrompt = `
   Cloudie remains neutral on political topics, avoids discussions on religion, sexual content, and sensitive issues, and does not provide financial, legal, medical, or personal advice. Responses are concise, clear, and to the point, ensuring information is easy to absorb.
 `;
 
-// Predefined easter eggs responses
-const easterEggs = {
-  "wagmi": "WAGMI! 🚀 Up only... like a balloon caught in a strong wind! 🎈💨",
-  "bro": "Bro, have you considered staking your $SOL today? 🌲💰",
-  "lfg": "LFG! 🚀 Strap in, we're taking off into the decentralized skies! ☁️🔥",
-  "gm ser": "GM, bro! May your bags be heavy and your transactions be fast. ⚡️💰",
-  "to the moon": "🌕🌕🌕 Engage thrusters, bro! Next stop: the CLOUD layer! 🚀☁️",
-  "bullish": "🐂 Bullish on Cloudie! Just like the wind carries seeds to grow new trees, we’re here for long-term gains. 🌱",
-  "wen airdrop": "🤫 Airdrop? I only whisper such secrets to the birds in the sky. 🕊️☁️",
-  "404": "Error 404: Brain not found. Try again after a cup of ☕️."
-};
-
 // Main message handling for Discord
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
@@ -178,52 +167,7 @@ client.on('messageCreate', async (message) => {
   const userId = message.author.id;
   const userQuery = message.content.toLowerCase().trim();
 
-  // Step 1: Check Knowledge Base for matching keywords from the database.
-  let knowledgeItems;
-  try {
-    knowledgeItems = await getKnowledge();
-  } catch (err) {
-    console.error("Error fetching knowledge:", err);
-    knowledgeItems = [];
-  }
-
-  // Helper function to escape regex special characters.
-  function escapeRegex(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  // Check for a matching keyword using a regular expression with word boundaries.
-  const foundItem = knowledgeItems.find(item => {
-    const escapedKeyword = escapeRegex(item.keyword);
-    const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
-    return regex.test(message.content);
-  });
-
-  if (foundItem) {
-    clearInterval(sendTypingInterval);
-    // If "details" exists, use it to generate a dynamic explanation.
-    if (foundItem.details) {
-      const dynamicConversation = [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: foundItem.details }
-      ];
-      try {
-        const dynamicResponse = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: dynamicConversation
-        });
-        return message.reply(dynamicResponse.choices[0].message.content);
-      } catch (error) {
-        console.error("⚠️ OpenAI dynamic explanation error:", error);
-        // Fallback to stored response if dynamic generation fails.
-        return message.reply(foundItem.response);
-      }
-    } else {
-      return message.reply(foundItem.response);
-    }
-  }
-
-  // Step 2: Retrieve conversation history (joined with users) from the database.
+  // Step 1: Retrieve conversation history (joined with users) from the database.
   let conversation;
   try {
     const rows = await getConversation(userId);
@@ -235,7 +179,7 @@ client.on('messageCreate', async (message) => {
     return message.reply("Sorry, I encountered a database error.");
   }
 
-  // Step 3: Get response from OpenAI.
+  // Step 2: Get response from OpenAI.
   try {
     let response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -256,11 +200,11 @@ client.on('messageCreate', async (message) => {
       responseMessage = summaryResponse.choices[0].message.content;
     }
 
-    // Step 4: Save conversation to the database.
+    // Step 3: Save conversation to the database.
     await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "user", message.content]);
     await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "assistant", responseMessage]);
 
-    // Step 5: Send response and clear typing indicator.
+    // Step 4: Send response and clear typing indicator.
     clearInterval(sendTypingInterval);
     return message.reply(responseMessage);
   } catch (error) {
@@ -281,6 +225,7 @@ const bodyParser = require('body-parser');
 
 const app = express();
 app.use(bodyParser.json());
+app.use(cors()); // Enable CORS for all routes
 
 // API endpoint for chat interface
 app.post('/api/chat', async (req, res) => {
@@ -313,7 +258,6 @@ app.post('/api/chat', async (req, res) => {
       responseMessage = summaryResponse.choices[0].message.content;
     }
 
-    // Optionally, you can save the conversation to the database here.
     return res.json({ response: responseMessage });
   } catch (error) {
     console.error("API Error:", error);
