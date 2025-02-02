@@ -167,13 +167,7 @@ client.on('messageCreate', async (message) => {
   const userId = message.author.id;
   const userQuery = message.content.toLowerCase().trim();
 
-  // Step 1: Easter Egg responses
-  if (easterEggs[userQuery]) {
-    clearInterval(sendTypingInterval);
-    return message.reply(easterEggs[userQuery]);
-  }
-
-  // Step 2: Check Knowledge Base for matching keywords from the database.
+  // Step 1: Check Knowledge Base for matching keywords from the database.
   let knowledgeItems;
   try {
     knowledgeItems = await getKnowledge();
@@ -218,7 +212,7 @@ client.on('messageCreate', async (message) => {
     }
   }
 
-  // Step 3: Retrieve conversation history (joined with users) from the database.
+  // Step 2: Retrieve conversation history (joined with users) from the database.
   let conversation;
   try {
     const rows = await getConversation(userId);
@@ -230,7 +224,7 @@ client.on('messageCreate', async (message) => {
     return message.reply("Sorry, I encountered a database error.");
   }
 
-  // Step 4: Get response from OpenAI.
+  // Step 3: Get response from OpenAI.
   try {
     let response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -251,11 +245,11 @@ client.on('messageCreate', async (message) => {
       responseMessage = summaryResponse.choices[0].message.content;
     }
 
-    // Step 5: Save conversation to the database.
+    // Step 4: Save conversation to the database.
     await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "user", message.content]);
     await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "assistant", responseMessage]);
 
-    // Step 6: Send response and clear typing indicator.
+    // Step 5: Send response and clear typing indicator.
     clearInterval(sendTypingInterval);
     return message.reply(responseMessage);
   } catch (error) {
