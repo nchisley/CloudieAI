@@ -115,7 +115,7 @@ client.on('messageCreate', async (message) => {
     if (rawArgs.length < 2) {
       return message.reply("⚠️ Invalid format! Use `!train keyword | response` or `!train keyword | response | details`");
     }
-    // Only normalize the keyword to lowercase.
+    // Normalize keyword to lowercase for consistency.
     const keyword = rawArgs[0].trim().toLowerCase();
     const response = rawArgs[1].trim();
     const details = rawArgs[2] ? rawArgs[2].trim() : null;
@@ -137,7 +137,7 @@ client.on('messageCreate', async (message) => {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return message.reply("❌ You don't have permission to untrain me.");
     }
-    // Convert the provided keyword to lowercase.
+    // Normalize the keyword to lowercase.
     const keywordToUntrain = message.content.slice(9).trim().toLowerCase();
     if (!keywordToUntrain) {
       return message.reply("⚠️ Please provide the keyword to untrain. Usage: `!untrain <keyword>`");
@@ -172,7 +172,52 @@ client.on('messageCreate', async (message) => {
   // Lowercase the incoming message content for matching.
   const userQuery = message.content.toLowerCase().trim();
 
-  // Step 1: Retrieve conversation history (joined with users) from the database.
+  // Step 1: Check Knowledge Base for matching keywords.
+  let knowledgeItems;
+  try {
+    knowledgeItems = await getKnowledge();
+  } catch (err) {
+    console.error("Error fetching knowledge:", err);
+    knowledgeItems = [];
+  }
+
+  // Helper function to escape regex special characters.
+  function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // Find a matching knowledge entry using case-insensitive regex.
+  const foundItem = knowledgeItems.find(item => {
+    const storedKeyword = item.keyword.toLowerCase();
+    const escapedKeyword = escapeRegex(storedKeyword);
+    const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
+    return regex.test(userQuery);
+  });
+
+  if (foundItem) {
+    clearInterval(sendTypingInterval);
+    // If "details" exists, generate a dynamic explanation; otherwise, return stored response.
+    if (foundItem.details) {
+      const dynamicConversation = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: foundItem.details }
+      ];
+      try {
+        const dynamicResponse = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: dynamicConversation
+        });
+        return message.reply(dynamicResponse.choices[0].message.content);
+      } catch (error) {
+        console.error("⚠️ OpenAI dynamic explanation error:", error);
+        return message.reply(foundItem.response);
+      }
+    } else {
+      return message.reply(foundItem.response);
+    }
+  }
+
+  // Step 2: Retrieve conversation history (joined with users) from the database.
   let conversation;
   try {
     const rows = await getConversation(userId);
@@ -184,7 +229,7 @@ client.on('messageCreate', async (message) => {
     return message.reply("Sorry, I encountered a database error.");
   }
 
-  // Step 2: Get response from OpenAI.
+  // Step 3: Get response from OpenAI.
   try {
     let response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -205,11 +250,11 @@ client.on('messageCreate', async (message) => {
       responseMessage = summaryResponse.choices[0].message.content;
     }
 
-    // Step 3: Save conversation to the database.
+    // Step 4: Save conversation to the database.
     await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "user", message.content]);
     await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "assistant", responseMessage]);
 
-    // Step 4: Send response and clear typing indicator.
+    // Step 5: Send response and clear typing indicator.
     clearInterval(sendTypingInterval);
     return message.reply(responseMessage);
   } catch (error) {
