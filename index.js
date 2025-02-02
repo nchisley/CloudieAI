@@ -142,6 +142,29 @@ client.on('messageCreate', async (message) => {
     }
   }
 
+  // Moderator command: !untrain – remove a keyword-response pair from the knowledge table.
+  if (message.content.startsWith('!untrain')) {
+    if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+      return message.reply("❌ You don't have permission to untrain me.");
+    }
+    const keywordToUntrain = message.content.slice(9).trim();
+    if (!keywordToUntrain) {
+      return message.reply("⚠️ Please provide the keyword to untrain. Usage: `!untrain <keyword>`");
+    }
+    try {
+      const result = await pool.query("DELETE FROM knowledge WHERE keyword = $1", [keywordToUntrain]);
+      if (result.rowCount > 0) {
+        console.log(`✅ Cloudie untrained: ${keywordToUntrain}`);
+        return message.reply(`✅ Cloudie has forgotten: **${keywordToUntrain}**`);
+      } else {
+        return message.reply(`⚠️ No training entry found for **${keywordToUntrain}**.`);
+      }
+    } catch (error) {
+      console.error("⚠️ Error untraining keyword:", error);
+      return message.reply("❌ Failed to untrain the keyword.");
+    }
+  }
+
   // Ignore messages with the designated prefix
   if (message.content.startsWith(IGNORE_PREFIX)) return;
   // Process only messages from specified channels or if Cloudie is mentioned
