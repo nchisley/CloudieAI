@@ -1,17 +1,14 @@
-// -------------------
-// Server-side code (Node.js)
-// -------------------
 require('dotenv/config');
 const path = require('path');
 const { Pool } = require('pg');
-const cors = require('cors');
-const express = require('express');
-const bodyParser = require('body-parser');
+const cors = require('cors'); // Import CORS middleware
 
 // Initialize PostgreSQL connection using the environment variable DATABASE_PUBLIC_URL provided by Railway
 const pool = new Pool({
   connectionString: process.env.DATABASE_PUBLIC_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 pool.connect((err) => {
@@ -35,6 +32,7 @@ const ensureUserExists = async (userId, username, platform) => {
 };
 
 // Promisify database queries for cleaner async/await usage with PostgreSQL
+// Updated to join the users table to access username and platform details.
 const getConversation = async (userId) => {
   try {
     const result = await pool.query(
@@ -87,6 +85,10 @@ client.on('ready', () => {
   console.log('🚀 Cloudie is online and ready to chat!');
 });
 
+// Constants for message handling
+const IGNORE_PREFIX = "!";
+const CHANNELS = ['1334284062508056739'];
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_KEY,
 });
@@ -105,14 +107,17 @@ client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
   // Moderator command: !train – save keyword-response pairs to the knowledge table.
+  // Accepts an optional third argument "details" for dynamic explanations.
   if (message.content.startsWith('!train')) {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return message.reply("❌ You don't have permission to train me.");
     }
+    // Extract parts using '|' as separator.
     const rawArgs = message.content.slice(6).split('|');
     if (rawArgs.length < 2) {
       return message.reply("⚠️ Invalid format! Use `!train keyword | response` or `!train keyword | response | details`");
     }
+    // Normalize keyword to lowercase for consistency.
     const keyword = rawArgs[0].trim().toLowerCase();
     const response = rawArgs[1].trim();
     const details = rawArgs[2] ? rawArgs[2].trim() : null;
@@ -134,6 +139,7 @@ client.on('messageCreate', async (message) => {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return message.reply("❌ You don't have permission to untrain me.");
     }
+    // Normalize the keyword to lowercase.
     const keywordToUntrain = message.content.slice(9).trim().toLowerCase();
     if (!keywordToUntrain) {
       return message.reply("⚠️ Please provide the keyword to untrain. Usage: `!untrain <keyword>`");
@@ -152,19 +158,20 @@ client.on('messageCreate', async (message) => {
     }
   }
 
-  // Ignore messages with the designated prefix.
+  // Ignore messages with the designated prefix
   if (message.content.startsWith(IGNORE_PREFIX)) return;
-  if (!['1334284062508056739'].includes(message.channelId) && !message.mentions.users.has(client.user.id))
-    return;
+  // Process only messages from specified channels or if Cloudie is mentioned
+  if (!CHANNELS.includes(message.channelId) && !message.mentions.users.has(client.user.id)) return;
 
-  // Ensure the user exists.
+  // Ensure the user exists in the users table (using Discord data)
   await ensureUserExists(message.author.id, message.author.username, "discord");
 
-  // Start typing indicator.
+  // Start typing indicator
   await message.channel.sendTyping();
   const sendTypingInterval = setInterval(() => message.channel.sendTyping(), 5000);
 
   const userId = message.author.id;
+  // Lowercase the incoming message content for matching.
   const userQuery = message.content.toLowerCase().trim();
 
   // ---- Knowledge Retrieval Block for Discord ----
@@ -175,9 +182,11 @@ client.on('messageCreate', async (message) => {
     console.error("Error fetching knowledge:", err);
     knowledgeItems = [];
   }
+  // Helper function to escape regex special characters.
   function escapeRegex(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
+  // Find a matching knowledge entry using case-insensitive regex.
   const foundItem = knowledgeItems.find(item => {
     const storedKeyword = item.keyword.toLowerCase();
     const escapedKeyword = escapeRegex(storedKeyword);
@@ -186,6 +195,7 @@ client.on('messageCreate', async (message) => {
   });
   if (foundItem) {
     clearInterval(sendTypingInterval);
+    // If "details" exists, generate a dynamic explanation; otherwise, return stored response.
     if (foundItem.details) {
       const dynamicConversation = [
         { role: "system", content: systemPrompt },
@@ -207,6 +217,7 @@ client.on('messageCreate', async (message) => {
   }
   // ---- End Knowledge Retrieval Block for Discord ----
 
+  // Step 1: Retrieve conversation history (joined with users) from the database.
   let conversation;
   try {
     const rows = await getConversation(userId);
@@ -218,12 +229,15 @@ client.on('messageCreate', async (message) => {
     return message.reply("Sorry, I encountered a database error.");
   }
 
+  // Step 2: Get response from OpenAI.
   try {
     let response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: conversation
     });
     let responseMessage = response.choices[0].message.content;
+
+    // If the response is too long, generate a summary.
     if (responseMessage.length > 2000) {
       const summaryConversation = [
         { role: "system", content: systemPrompt },
@@ -235,8 +249,12 @@ client.on('messageCreate', async (message) => {
       });
       responseMessage = summaryResponse.choices[0].message.content;
     }
+
+    // Step 3: Save conversation to the database.
     await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "user", message.content]);
     await runQuery("INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)", [userId, "assistant", responseMessage]);
+
+    // Step 4: Send response and clear typing indicator.
     clearInterval(sendTypingInterval);
     return message.reply(responseMessage);
   } catch (error) {
@@ -256,14 +274,17 @@ const bodyParser = require('body-parser');
 
 const app = express();
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors()); // Enable CORS for all routes
 
+// API endpoint for chat interface with knowledge retrieval
 app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: "No message provided" });
 
+  // Normalize the incoming message.
   const userQuery = message.toLowerCase().trim();
 
+  // Retrieve knowledge base entries.
   let knowledgeItems;
   try {
     knowledgeItems = await getKnowledge();
@@ -271,16 +292,22 @@ app.post('/api/chat', async (req, res) => {
     console.error("Error fetching knowledge:", err);
     knowledgeItems = [];
   }
+
+  // Helper function to escape regex special characters.
   function escapeRegex(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
+
+  // Check for a matching keyword using case-insensitive regex.
   const foundItem = knowledgeItems.find(item => {
     const storedKeyword = item.keyword.toLowerCase();
     const escapedKeyword = escapeRegex(storedKeyword);
     const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
     return regex.test(userQuery);
   });
+
   if (foundItem) {
+    // If "details" exists, generate a dynamic explanation.
     if (foundItem.details) {
       const dynamicConversation = [
         { role: "system", content: systemPrompt },
@@ -301,6 +328,7 @@ app.post('/api/chat', async (req, res) => {
     }
   }
 
+  // If no knowledge match is found, build a conversation with the system prompt and user's message.
   const conversation = [
     { role: "system", content: systemPrompt },
     { role: "user", content: message }
@@ -312,6 +340,8 @@ app.post('/api/chat', async (req, res) => {
       messages: conversation
     });
     let responseMessage = response.choices[0].message.content;
+
+    // If the response is too long, generate a summary.
     if (responseMessage.length > 2000) {
       const summaryConversation = [
         { role: "system", content: systemPrompt },
@@ -323,6 +353,7 @@ app.post('/api/chat', async (req, res) => {
       });
       responseMessage = summaryResponse.choices[0].message.content;
     }
+
     return res.json({ response: responseMessage });
   } catch (error) {
     console.error("API Error:", error);
