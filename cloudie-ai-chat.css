@@ -1,0 +1,165 @@
+/* CHAT */
+.chat-popup .dialog-close-button svg:hover {
+    fill:#292f85!important;
+    transition: fill 0.3s;
+}
+.chat-box .elementor-widget-container {
+    display:flex!important;
+}
+.the-chat {
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    height:200px;
+}
+.the-chat .elementor-widget-container {
+    justify-content: center;
+}
+.the-chat #chat-container {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    padding:8px;
+    flex-grow:1;
+    align-self:stretch;
+    height:100%;
+    max-width: 800px;
+    width:100%;
+}
+.the-chat #chat-log {
+    width:100%;
+    height:400px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    border-radius:2px;
+    flex-grow:1;
+    align-content:flex-start;
+    font-size:.88em;
+    display:flex;
+    flex-direction:row;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    padding:4px 10px;
+    border-top:2px solid #000000;
+    border-bottom:2px solid #000000;
+}
+.the-chat #chat-form {
+    display:flex;
+    flex-direction:row;
+    gap:8px;
+    flex-grow:0;
+    align-items:stretch;
+    align-self:stretch;
+}
+.the-chat #chat-input {
+    border-radius:8px;
+    background:#111111;
+    border:1px solid #000000!important;
+    color:#006BFF;
+    font-size:.88em;
+}
+.the-chat #chat-input:focus {
+    outline:0 solid var(--e-global-color-e89f0b0);
+}
+.the-chat #chat-input::placeholder {
+    color:#888888;
+}
+.the-chat #chat-input:focus::placeholder {
+    color:transparent;
+}
+.the-chat #chat-log::-webkit-scrollbar {
+    background-color:transparent!important;
+}
+.the-chat #chat-log::-webkit-scrollbar-track {
+    background-color:transparent!important;
+}
+.the-chat button {
+    font-family: "Instrument Sans", Sans-serif !important;
+    text-transform:uppercase;
+    color:#ffffff;
+}
+.the-chat button:hover {
+    color:#ffffff;
+}
+.the-chat .agent-text {
+    background:transparent;
+    color:var(--e-global-color-secondary);
+    padding:0 2px 0 2px;
+    margin-top:4px!important;
+    margin-bottom:4px!important;
+    border-radius:8px;
+    width:100%;
+    word-break:break-word;
+}
+.the-chat .user-text {
+    background:transparent;
+    color:#006BFF;
+    padding:0 2px 0 2px;
+    margin-top:4px!important;
+    margin-bottom:4px!important;
+    border-radius:8px;
+    width:100%;
+    align-self:end;
+    word-break:break-word;
+}
+.the-chat .chat-text {
+    width:100%;
+    display: flex;
+    flex-direction: column;
+    align-self:flex-end;
+}
+.the-chat .think-text {
+    width:100%;
+    align-self:flex-start;
+    animation: pulse 1.5s infinite;
+}
+
+/* CHAT FULL WINDOW */
+body.chat-full #elementor-popup-modal-12698 .dialog-message {
+  position: fixed!important;
+  display:flex;
+  flex-direction:column;
+  top: 0!important;
+  left: 0!important;
+  width: 100vw!important;
+  height: 100%!important;
+  border-radius:0!important;
+}
+body.chat-full .elementor-location-popup {
+    display:flex!important;
+    height:100%!important;
+}
+body.chat-full .dialog-widget-content {
+    top:0;
+    right:0;
+    margin:0 0 0 0!important;
+}
+body.chat-full .chat-popup {
+    background:var(--e-global-color-8d353b9);
+}
+body.chat-full .ai-head img {
+    width:80px!important;
+    height:80px!important;
+}
+
+/* Chat full background image */
+body.chat-full .chat-box:before {
+    background-image: url(https://cloudie.so/wp-content/uploads/2024/09/cloudie-nft-002.webp);
+    --background-overlay: '';
+    background-position: bottom center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    opacity:.1;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+@media only screen and (max-width: 768px) {
+.chat-popup .dialog-message {
+    border-radius:0 0 0 0!important;
+}
+}
