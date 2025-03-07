@@ -11,11 +11,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Popup persistence setup (jQuery required)
   jQuery(document).ready(function($) {
-    var popupId = 932; // Popup ID for Cloudie chat
+    var popupId = 12698; // Popup ID for Cloudie chat
 
-    if (typeof elementorProFrontend === 'undefined') {
-      console.error('Elementor Pro frontend module not loaded');
-      return;
+    // Wait for Elementor Pro to load
+    function waitForElementorPro(callback) {
+      if (typeof elementorProFrontend !== 'undefined' && 
+          typeof elementorProFrontend.modules !== 'undefined' && 
+          typeof elementorProFrontend.modules.popup !== 'undefined') {
+        console.log('Elementor Pro loaded');
+        callback();
+      } else {
+        console.log('Waiting for Elementor Pro...');
+        setTimeout(() => waitForElementorPro(callback), 100);
+      }
     }
 
     function checkPopupState() {
@@ -27,8 +35,18 @@ document.addEventListener('DOMContentLoaded', () => {
       if (sessionStorage.getItem('popupClosed') !== 'true' && 
           (window.location.hash === '#cloudie' || sessionStorage.getItem('popupShown') === 'true')) {
         console.log('Showing popup with ID:', popupId);
-        elementorProFrontend.modules.popup.showPopup({ id: popupId });
-        sessionStorage.setItem('popupShown', 'true');
+        try {
+          elementorProFrontend.modules.popup.showPopup({ id: popupId });
+          sessionStorage.setItem('popupShown', 'true');
+        } catch (error) {
+          console.error('Error triggering popup:', error);
+          // Fallback: Force show popup
+          const $popup = $(`[data-elementor-id="${popupId}"]`);
+          if ($popup.length) {
+            $popup.show().addClass('elementor-popup-modal--active dialog-visible');
+            console.log('Fallback: Popup shown via jQuery');
+          }
+        }
       } else {
         console.log('Popup not shown - either closed or no trigger');
       }
@@ -37,7 +55,16 @@ document.addEventListener('DOMContentLoaded', () => {
     $('a[href="#cloudie"]').on('click', function(e) {
       e.preventDefault();
       console.log('Link with #cloudie clicked');
-      elementorProFrontend.modules.popup.showPopup({ id: popupId });
+      try {
+        elementorProFrontend.modules.popup.showPopup({ id: popupId });
+      } catch (error) {
+        console.error('Error triggering popup on click:', error);
+        const $popup = $(`[data-elementor-id="${popupId}"]`);
+        if ($popup.length) {
+          $popup.show().addClass('elementor-popup-modal--active dialog-visible');
+          console.log('Fallback: Popup shown via jQuery on click');
+        }
+      }
       sessionStorage.setItem('popupShown', 'true');
       sessionStorage.removeItem('popupClosed');
     });
@@ -48,15 +75,32 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Popup closed, updating storage');
         sessionStorage.setItem('popupClosed', 'true');
         sessionStorage.removeItem('popupShown');
+        if (window.location.hash === '#cloudie') {
+          history.replaceState(null, null, window.location.pathname);
+          console.log('Removed #cloudie from URL');
+        }
       }
     });
 
-    console.log('Page loaded, checking initial state');
-    checkPopupState();
+    // Preserve popup state across navigation
+    $(document).on('click', 'a:not([href="#cloudie"])', function(e) {
+      if (sessionStorage.getItem('popupShown') === 'true' && !this.href.includes('#')) {
+        e.preventDefault();
+        const newUrl = this.href + '#cloudie';
+        console.log('Preserving popup state, redirecting to:', newUrl);
+        window.location.href = newUrl;
+      }
+    });
 
-    $(window).on('hashchange', function() {
-      console.log('Hash changed');
+    // Initialize when Elementor Pro is ready
+    waitForElementorPro(() => {
+      console.log('Page loaded, checking initial state');
       checkPopupState();
+
+      $(window).on('hashchange', function() {
+        console.log('Hash changed');
+        checkPopupState();
+      });
     });
   });
 
