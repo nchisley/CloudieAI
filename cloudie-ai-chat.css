@@ -141,6 +141,12 @@ body.chat-full .ai-head img {
     width:80px!important;
     height:80px!important;
 }
+.dialog-close-button:focus {
+    outline: none !important;
+}
+.dialog-close-button:focus {
+    outline: none !important;
+}
 
 /* Chat full background image */
 body.chat-full .chat-box:before {
